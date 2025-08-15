@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db_dump.sql:/docker-entrypoint-initdb.d/db_dump.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432" # Optional: expose for local dev/debugging
+
+  backend:
+    build:
+      context: ./backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      EMAIL_SERVICE_HOST: ${EMAIL_SERVICE_HOST}
+      EMAIL_SERVICE_PORT: ${EMAIL_SERVICE_PORT}
+      EMAIL_SERVICE_USER: ${EMAIL_SERVICE_USER}
+      EMAIL_SERVICE_PASS: ${EMAIL_SERVICE_PASS}
+      MOCK_SMS_ENABLED: ${MOCK_SMS_ENABLED}
+      UPLOAD_DIR: /app/uploads # Matches volume mount inside container
+    volumes:
+      - ./backend/uploads:/app/uploads # Mount local uploads to container path
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "npm install && npm run start:dev" # Install deps and start dev server
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: always
+    ports:
+      - "80:80" # Standard HTTP port
+    environment:
+      VITE_APP_API_URL: http://backend:3000/api # Use service name 'backend' inside docker network
+    depends_on:
+      backend:
+        condition: service_started
+
+volumes:
+  db_data:
