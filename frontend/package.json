@@ -23,7 +23,7 @@
     "date-fns": "^2.30.0",
     "react-modal": "^3.16.1",
     "react-chartjs-2": "^5.2.0",
-    "chart.js": "^4.4.0" // Ensure chart.js is listed as a direct dependency
+    "chart.js": "^4.4.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
@@ -41,6 +41,6 @@
     "@types/react-datepicker": "^4.19.2",
     "@types/react-modal": "^3.16.1",
     "@types/chart.js": "^2.9.37",
-    "@faker-js/faker": "^8.3.1" // Using @faker-js/faker as 'faker' is deprecated
+    "@faker-js/faker": "^8.3.1"
   }
 }
