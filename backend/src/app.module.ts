@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { ServicesModule } from './services/services.module';
-import { AppointmentsModule } from './appointments/appointments.module';
+import { AppointmentsModule } from './appointments/appointments.module'; // Import AppointmentsModule
 import { DocumentsModule } from './documents/documents.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -14,8 +14,9 @@ import { AiChatModule } from './ai-chat/ai-chat.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './users/user.entity';
-import { Department } from './departments/department.entity'; // Import Department entity
-import { Service } from './services/service.entity';     // Import Service entity
+import { Department } from './departments/department.entity';
+import { Service } from './services/service.entity';
+import { Appointment } from './appointments/appointment.entity'; // Import Appointment entity
 
 
 @Module({
@@ -29,7 +30,7 @@ import { Service } from './services/service.entity';     // Import Service entit
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Department, Service], // Include Department and Service entities
+        entities: [User, Department, Service, Appointment], // Include Appointment entity
         synchronize: false,
         autoLoadEntities: true,
       }),
@@ -37,9 +38,9 @@ import { Service } from './services/service.entity';     // Import Service entit
     }),
     AuthModule,
     UsersModule,
-    DepartmentsModule, // Import DepartmentsModule
-    ServicesModule,    // Import ServicesModule
-    AppointmentsModule,
+    DepartmentsModule,
+    ServicesModule,
+    AppointmentsModule, // Import AppointmentsModule
     DocumentsModule,
     NotificationsModule,
     AnalyticsModule,

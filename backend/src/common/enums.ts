@@ -5,9 +5,12 @@ export enum UserRole {
 }
 
 export enum AppointmentStatus {
-  Scheduled = 'scheduled',
+  Pending = 'pending',
+  Confirmed = 'confirmed',
+  CancelledByCitizen = 'cancelled_by_citizen',
+  CancelledByOfficer = 'cancelled_by_officer',
   Completed = 'completed',
-  Cancelled = 'cancelled',
+  Rescheduled = 'rescheduled',
 }
 
 export enum DocumentType {
