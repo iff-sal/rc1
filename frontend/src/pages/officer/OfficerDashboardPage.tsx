@@ -1,5 +1,5 @@
 import React from 'react';
-import { TopBar } from '../../components/TopBar';
+import TopBar from '../../components/TopBar';
 import { useAuth } from '../../contexts/AuthContext';
 
 const OfficerDashboardPage: React.FC = () => {

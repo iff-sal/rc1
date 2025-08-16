@@ -18,8 +18,8 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (userData: any) => Promise<void>; // Use a specific DTO type here
+  login: (email: string, password: string) => Promise<void>; // Added type annotations
+  signup: (userData: any) => Promise<void>; // Added type annotation (consider refining 'any')
   logout: () => void;
 }
 
@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [token]);
 
-  const login = async (email, password) => {
+  const login = async (email: string, password: string) => { // Added type annotations
     try {
       const response = await api.post('/auth/login', { email, password });
       const { access_token, user: userData } = response.data; // Assuming backend returns { access_token, user }
@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signup = async (userData) => {
+  const signup = async (userData: any) => { // Added type annotation (consider refining 'any')
     try {
       // Ensure the DTO matches backend requirements (e.g., includes confirm_password if needed)
       await api.post('/auth/signup', userData);
@@ -111,3 +111,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export { AuthContext, AuthContextType }; // Export AuthContext and AuthContextType

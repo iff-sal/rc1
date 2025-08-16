@@ -5,6 +5,7 @@ import { UserRole } from '../common/enums'; // Adjust the import path and ensure
 
 interface ProtectedRouteProps {
   requiredRoles?: UserRole[];
+  children: React.ReactNode; // Add this line
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRoles }) => {
@@ -29,7 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRoles }) => {
   }
 
   // If authenticated and role matches (or no role required), render the child routes/elements
-  return <Outlet />;
+ return <>{children}</>;
 };
 
 export default ProtectedRoute;
