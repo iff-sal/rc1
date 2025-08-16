@@ -11,7 +11,9 @@ import AppointmentConfirmationPage from './pages/citizen/AppointmentConfirmation
 import DocumentsPage from './pages/citizen/DocumentsPage';
 import AppointmentDetailPage from './pages/officer/AppointmentDetailPage';
 import AIAssistantPage from './pages/citizen/AIAssistantPage';
-import AnalyticsPage from './pages/officer/AnalyticsPage'; // Import AnalyticsPage
+import AnalyticsPage from './pages/officer/AnalyticsPage';
+import SettingsPage from './pages/citizen/SettingsPage'; // Import SettingsPage
+import ProfileEditPage from './pages/citizen/ProfileEditPage'; // Import ProfileEditPage
 
 
 function AppRoutes() {
@@ -79,6 +81,23 @@ function AppRoutes() {
             </ProtectedRoute>
          }
       />
+       <Route // Settings Page
+         path="/settings"
+         element={
+            <ProtectedRoute requiredRoles={['citizen']}>
+                <SettingsPage />
+            </ProtectedRoute>
+         }
+      />
+       <Route // Profile Edit Page
+         path="/profile/edit"
+         element={
+            <ProtectedRoute requiredRoles={['citizen']}>
+                <ProfileEditPage />
+            </ProtectedRoute>
+         }
+      />
+
 
        {/* TODO: Add route for viewing individual citizen appointment details if needed */}
        {/* <Route
