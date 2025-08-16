@@ -8,7 +8,8 @@ import OfficerDashboardPage from './pages/officer/OfficerDashboardPage';
 import ServicesPage from './pages/citizen/ServicesPage';
 import ServiceBookingPage from './pages/citizen/ServiceBookingPage';
 import AppointmentConfirmationPage from './pages/citizen/AppointmentConfirmationPage';
-import DocumentsPage from './pages/citizen/DocumentsPage'; // Import DocumentsPage
+import DocumentsPage from './pages/citizen/DocumentsPage';
+import AppointmentDetailPage from './pages/officer/AppointmentDetailPage';
 
 
 function AppRoutes() {
@@ -27,7 +28,7 @@ function AppRoutes() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Protected Routes */}
+      {/* Protected Routes - Citizen */}
       <Route
         path="/citizen/dashboard"
         element={
@@ -37,14 +38,6 @@ function AppRoutes() {
         }
       />
        <Route
-        path="/officer/dashboard"
-        element={
-          <ProtectedRoute requiredRoles={['government_officer', 'admin']}>
-            <OfficerDashboardPage />
-          </ProtectedRoute>
-        }
-      />
-       <Route // Services Browse Page
         path="/services"
         element={
           <ProtectedRoute requiredRoles={['citizen']}>
@@ -52,7 +45,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route // Service Booking Page
+      <Route
         path="/services/:serviceId"
         element={
           <ProtectedRoute requiredRoles={['citizen']}>
@@ -60,7 +53,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route // Appointment Confirmation Page
+      <Route
         path="/appointments/confirm"
         element={
           <ProtectedRoute requiredRoles={['citizen']}>
@@ -68,7 +61,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route // Documents Page
+      <Route
         path="/documents"
         element={
           <ProtectedRoute requiredRoles={['citizen']}>
@@ -76,14 +69,42 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-       {/* TODO: Add route for viewing individual appointment details */}
+       {/* TODO: Add route for viewing individual citizen appointment details if needed */}
        {/* <Route
             path="/appointments/:id"
             element={
-              <ProtectedRoute requiredRoles={['citizen', 'government_officer', 'admin']}>
-                 <AppointmentDetailsPage /> // Create this page later
+              <ProtectedRoute requiredRoles={['citizen']}>
+                 <CitizenAppointmentDetailsPage /> // Create this page later
               </ProtectedRoute>
             }
+         /> */}
+
+
+        {/* Protected Routes - Officer/Admin */}
+        <Route
+            path="/officer/dashboard"
+            element={
+              <ProtectedRoute requiredRoles={['government_officer', 'admin']}>
+                <OfficerDashboardPage />
+              </ProtectedRoute>
+            }
+        />
+        <Route
+            path="/officer/appointments/:appointmentId"
+            element={
+              <ProtectedRoute requiredRoles={['government_officer', 'admin']}> {/* Officers and Admins can view officer details */}
+                 <AppointmentDetailPage />
+              </ProtectedRoute>
+            }
+         />
+         {/* TODO: Add routes for officer document review directly if needed */}
+         {/* <Route
+             path="/officer/documents/:documentId"
+             element={
+                 <ProtectedRoute requiredRoles={['government_officer', 'admin']}>
+                     <OfficerDocumentReviewPage /> // If a separate page is needed
+                 </ProtectedRoute>
+             }
          /> */}
 
 
