@@ -22,4 +22,9 @@ api.interceptors.request.use(
   }
 );
 
+
+export const login = (email, password) => {
+  return api.post('/auth/login', { email, password });
+};
+
 export default api;
