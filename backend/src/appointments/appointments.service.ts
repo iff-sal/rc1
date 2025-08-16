@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository, MoreThanOrEqual, LessThanOrEqual, IsNull } from 'typeorm'; // Import IsNull
+import { Between, Repository, MoreThanOrEqual, LessThanOrEqual, IsNull, In } from 'typeorm';
 import { Appointment } from './appointment.entity';
 import { CreateAppointmentDto, AvailableSlotsQueryDto, UpdateAppointmentStatusDto } from './dto/appointment.dto';
 import { ServicesService } from '../services/services.service';
@@ -8,18 +8,20 @@ import { DepartmentsService } from '../departments/departments.service';
 import { UserRole, AppointmentStatus } from '../common/enums';
 import { v4 as uuidv4 } from 'uuid';
 import * as QRCode from 'qrcode';
-import { User } from '../users/user.entity'; // Import User entity
-import { In } from 'typeorm';
+import { User } from '../users/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+
 
 @Injectable()
 export class AppointmentsService {
   constructor(
     @InjectRepository(Appointment)
-    private appointmentsRepository: Repository<Appointment>,
-    @InjectRepository(User) // Inject User repository to fetch officer's department
+    public appointmentsRepository: Repository<Appointment>, // Made public for scheduler to access
+    @InjectRepository(User)
     private userRepository: Repository<User>,
     private servicesService: ServicesService,
     private departmentsService: DepartmentsService,
+    private notificationsService: NotificationsService, // Inject NotificationsService
   ) {}
 
   async getAvailableSlots(serviceId: string, dateString: string): Promise<string[]> {
@@ -77,13 +79,10 @@ export class AppointmentsService {
         service_id: serviceId,
         appointment_date_time: Between(date, endOfDay),
         // Consider statuses that block a slot
-        status: In([AppointmentStatus.Pending, AppointmentStatus.Confirmed]) // Import In from typeorm
+        status: In([AppointmentStatus.Pending, AppointmentStatus.Confirmed])
       },
       select: ['appointment_date_time']
     });
-
-     // For TypeORM < 0.3.x, use the following import:
-    // import { Between, In, Repository, MoreThanOrEqual, LessThanOrEqual, IsNull } from 'typeorm';
 
 
     const bookedSlots: string[] = bookedAppointments.map(app =>
@@ -134,11 +133,21 @@ export class AppointmentsService {
       status: AppointmentStatus.Pending, // Start as pending, confirmed by officer
     });
 
-    await this.appointmentsRepository.save(newAppointment);
+    const savedAppointment = await this.appointmentsRepository.save(newAppointment);
 
-    // TODO: Send confirmation email/SMS here (using NotificationsService later)
+    // Send confirmation email/SMS
+    // Load relations needed for notification service
+     const appointmentWithRelations = await this.appointmentsRepository.findOne({
+         where: { id: savedAppointment.id },
+         relations: ['citizen', 'service'] // Ensure citizen and service are loaded
+     });
 
-    return newAppointment;
+     if (appointmentWithRelations) {
+        await this.notificationsService.sendAppointmentConfirmationEmail(appointmentWithRelations);
+     }
+
+
+    return savedAppointment;
   }
 
   async findAppointmentsByCitizenId(citizenId: string, status?: string): Promise<Appointment[]> {
@@ -184,7 +193,13 @@ export class AppointmentsService {
         const endOfDay = new Date(date);
         endOfDay.setHours(23, 59, 59, 999);
         where.appointment_date_time = Between(date, endOfDay);
+    } else {
+        // If no date is provided, show appointments from today onwards by default for officers
+         const today = new Date();
+         today.setHours(0,0,0,0);
+         where.appointment_date_time = MoreThanOrEqual(today);
     }
+
 
      // Handle comma-separated statuses if provided
     if (status) {
@@ -195,6 +210,11 @@ export class AppointmentsService {
             throw new BadRequestException('Invalid appointment status provided.');
         }
        where.status = In(statuses); // Use In for multiple statuses
+    } else {
+         // If no status is provided, show pending and confirmed by default for today/future
+         if (!dateString) { // Apply default status filter only when no specific date is set
+              where.status = In([AppointmentStatus.Pending, AppointmentStatus.Confirmed, AppointmentStatus.Rescheduled]);
+         }
     }
 
 
@@ -206,17 +226,18 @@ export class AppointmentsService {
   }
 
 
-  async updateAppointmentStatus(appointmentId: string, updateDto: UpdateAppointmentStatusDto): Promise<Appointment> {
-    const appointment = await this.appointmentsRepository.findOne({ where: { id: appointmentId } });
+  async updateAppointmentStatus(appointmentId: string, updateDto: UpdateAppointmentStatusDto, officerId: string): Promise<Appointment> {
+    const appointment = await this.appointmentsRepository.findOne({ where: { id: appointmentId }, relations: ['department'] }); // Load department to check officer auth
 
     if (!appointment) {
       throw new NotFoundException(`Appointment with ID ${appointmentId} not found`);
     }
 
-    // Optional: Add check here to ensure the officer performing the update
-    // belongs to the same department as the appointment's service.
-    // This requires getting the officer's department from req.user in the controller
-    // and passing it here, or fetching it based on the appointment's department_id.
+    // Authorization check: Ensure the officer belongs to the same department as the appointment
+    const officer = await this.userRepository.findOne({ where: { id: officerId }, relations: ['department'] });
+    if (!officer || officer.role !== UserRole.GovernmentOfficer || !officer.department || officer.department.id !== appointment.department.id) {
+        throw new UnauthorizedException('You do not have permission to update appointments in this department.');
+    }
 
 
     appointment.status = updateDto.status;
@@ -226,11 +247,21 @@ export class AppointmentsService {
     appointment.updated_at = new Date(); // Update the updated_at timestamp
 
 
-    await this.appointmentsRepository.save(appointment);
+    const updatedAppointment = await this.appointmentsRepository.save(appointment);
 
-    // TODO: Send notification based on status change (using NotificationsService later)
+    // Send notification based on status change
+    // Load citizen and service relations for notification
+     const appointmentWithRelations = await this.appointmentsRepository.findOne({
+         where: { id: updatedAppointment.id },
+         relations: ['citizen', 'service']
+     });
 
-    return appointment;
+     if (appointmentWithRelations) {
+        await this.notificationsService.sendAppointmentStatusUpdateEmail(appointmentWithRelations, updatedAppointment.officer_notes);
+     }
+
+
+    return updatedAppointment;
   }
 
   async findById(id: string): Promise<Appointment | undefined> {

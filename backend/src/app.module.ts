@@ -5,18 +5,20 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { ServicesModule } from './services/services.module';
-import { AppointmentsModule } from './appointments/appointments.module'; // Import AppointmentsModule
+import { AppointmentsModule } from './appointments/appointments.module';
 import { DocumentsModule } from './documents/documents.module';
-import { NotificationsModule } from './notifications/notifications.module';
+import { NotificationsModule } from './notifications/notifications.module'; // Import NotificationsModule
 import { AnalyticsModule } from './analytics/analytics.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { AiChatModule } from './ai-chat/ai-chat.module';
+import { SchedulerModule } from './scheduler/scheduler.module'; // Import SchedulerModule
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './users/user.entity';
 import { Department } from './departments/department.entity';
 import { Service } from './services/service.entity';
-import { Appointment } from './appointments/appointment.entity'; // Import Appointment entity
+import { Appointment } from './appointments/appointment.entity';
+import { Document } from './documents/document.entity';
 
 
 @Module({
@@ -30,7 +32,7 @@ import { Appointment } from './appointments/appointment.entity'; // Import Appoi
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Department, Service, Appointment], // Include Appointment entity
+        entities: [User, Department, Service, Appointment, Document],
         synchronize: false,
         autoLoadEntities: true,
       }),
@@ -40,12 +42,13 @@ import { Appointment } from './appointments/appointment.entity'; // Import Appoi
     UsersModule,
     DepartmentsModule,
     ServicesModule,
-    AppointmentsModule, // Import AppointmentsModule
+    AppointmentsModule,
     DocumentsModule,
-    NotificationsModule,
+    NotificationsModule, // Include NotificationsModule
     AnalyticsModule,
     FeedbackModule,
     AiChatModule,
+    SchedulerModule, // Include SchedulerModule
   ],
   controllers: [AppController],
   providers: [AppService],
