@@ -1,11 +1,16 @@
 # Stage 1: Build the React application
 FROM node:18-alpine as builder
 
+RUN corepack enable && corepack prepare yarn@4.9.2 --activate
+
+
 WORKDIR /app
 
 COPY package.json yarn.lock ./
+COPY .yarn .yarn
+# COPY .yarnrc.yml ./
 
-RUN yarn install --frozen-lockfile
+RUN yarn install --immutable
 
 COPY . .
 
