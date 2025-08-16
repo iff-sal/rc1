@@ -8,8 +8,8 @@ import { ServicesModule } from './services/services.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { DocumentsModule } from './documents/documents.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { AnalyticsModule } from './analytics/analytics.module'; // Import AnalyticsModule
-import { FeedbackModule } from './feedback/feedback.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { FeedbackModule } from './feedback/feedback.module'; // Import FeedbackModule
 import { AiChatModule } from './ai-chat/ai-chat.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -20,6 +20,7 @@ import { Service } from './services/service.entity';
 import { Appointment } from './appointments/appointment.entity';
 import { Document } from './documents/document.entity';
 import { AiKnowledgeBase } from './ai-chat/ai-knowledge-base.entity';
+import { Feedback } from './feedback/feedback.entity'; // Import Feedback entity
 
 
 @Module({
@@ -33,7 +34,7 @@ import { AiKnowledgeBase } from './ai-chat/ai-knowledge-base.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Department, Service, Appointment, Document, AiKnowledgeBase],
+        entities: [User, Department, Service, Appointment, Document, AiKnowledgeBase, Feedback], // Include Feedback entity
         synchronize: false,
         autoLoadEntities: true,
       }),
@@ -46,8 +47,8 @@ import { AiKnowledgeBase } from './ai-chat/ai-knowledge-base.entity';
     AppointmentsModule,
     DocumentsModule,
     NotificationsModule,
-    AnalyticsModule, // Include AnalyticsModule
-    FeedbackModule,
+    AnalyticsModule,
+    FeedbackModule, // Include FeedbackModule
     AiChatModule,
     SchedulerModule,
   ],
