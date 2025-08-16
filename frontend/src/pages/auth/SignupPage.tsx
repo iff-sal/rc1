@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../src/contexts/AuthContext'; // Adjust the path if necessary
+import { useAuth } from '../../../src/contexts/AuthContext'; // Keep useAuth if you need user/loading state
+import { signup } from '../../api/axios'; // Import the signup API function
 
 const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -16,7 +17,10 @@ const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
 
-  const { signup } = useAuth();
+  // Keep useAuth call, but remove destructuring if user/loading aren't used
+  // If you don't need user or loading state from AuthContext in this component,
+  // you can simply call useAuth() to ensure the context is available.
+  useAuth(); // Removed destructuring for unused variables
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,8 +68,22 @@ const SignupPage: React.FC = () => {
     if (validate()) {
       setLoading(true);
       try {
-        await signup(formData);
-        navigate('/login'); // Redirect to login on successful signup
+        // Call the imported signup API function
+        await signup(formData); // Removed unused 'response' variable
+
+        // Optional: Auto-login user after successful signup if needed (uncomment if needed)
+        // If you uncomment this, you will need to destructure 'login' from useAuth()
+        // if (response.data && response.data.user && response.data.access_token) {
+        //    localStorage.setItem("token", response.data.access_token);
+        //    // Assuming authContext.login expects a user object
+        //    const authContext = useAuth(); // Get context again if not destructured above
+        //    authContext.login(response.data.user);
+        //    navigate("/citizen/dashboard");
+        // } else {
+            // Redirect to login page after successful signup
+            navigate('/login');
+        // }
+
       } catch (err: any) {
         console.error('Signup failed:', err);
         setSignupError(err.response?.data?.message || 'Signup failed. Please try again.');

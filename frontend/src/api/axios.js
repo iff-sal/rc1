@@ -27,4 +27,12 @@ export const login = (email, password) => {
   return api.post('/auth/login', { email, password });
 };
 
+// Add and export the signup function
+export const signup = (userData) => {
+  // Assuming the signup endpoint is /auth/signup and it expects user data in the body
+  // The structure of userData should match the backend's RegisterUserDto
+  return api.post('/auth/signup', userData);
+};
+
+
 export default api;

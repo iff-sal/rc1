@@ -12,12 +12,7 @@ import {
   Legend,
   ArcElement // Needed for Doughnut chart
 } from 'chart.js';
-import {
-    PeakBookingHoursDto,
-    DepartmentLoadDto,
-    NoShowRateDto,
-    AverageProcessingTimeDto
-} from '../../../backend/src/analytics/dto/analytics.dto'; // Assuming DTOs are accessible or redefine
+// Removed the backend analytics DTO import as DTOs are redefined below
 
 
 // Redefine DTOs if not directly accessible
@@ -83,6 +78,7 @@ const AnalyticsPage: React.FC = () => {
           api.get('/api/analytics/average-processing-times'),
         ]);
 
+        // Assuming response data matches the frontend DTO interfaces
         setPeakHoursData(peakHoursResponse.data);
         setDepartmentLoadData(departmentLoadResponse.data);
         setNoShowRateData(noShowRateResponse.data);
@@ -174,7 +170,7 @@ const AnalyticsPage: React.FC = () => {
        }
    };
 
-  // No-Show Rate Chart (Doughnut)
+  // No-Show Rate Chart (Doughnut) - Modified to always return valid ChartData structure
    const noShowChartData = noShowRateData ? {
        labels: ['Confirmed (Attended/Completed)', 'Cancelled by Citizen', 'Cancelled by Officer'],
        datasets: [
@@ -197,7 +193,7 @@ const AnalyticsPage: React.FC = () => {
                borderWidth: 1,
            }
        ]
-   } : {};
+   } : { labels: [], datasets: [] }; // Provides empty arrays when noShowRateData is null
 
     const noShowChartOptions = {
         responsive: true,
@@ -254,6 +250,7 @@ const AnalyticsPage: React.FC = () => {
         {loading && <div className="text-center text-gray-600">Loading analytics data...</div>}
         {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
 
+        {/* Only render charts if not loading and no error */}
         {!loading && !error && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Peak Booking Hours Chart Card */}
@@ -267,9 +264,11 @@ const AnalyticsPage: React.FC = () => {
              </div>
 
             {/* No-Show Rate Chart Card */}
-            {noShowRateData && ( // Only render if data is available
+            {/* Only render this section if noShowRateData is available */}
+            {noShowRateData && (
                  <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 text-center">No-Show Rate</h2>
+                     {/* Use the updated noShowChartData which is guaranteed to have structure */}
                      <div className="relative w-full max-w-[300px]"> {/* Container for Doughnut */}
                         <Doughnut data={noShowChartData} options={noShowChartOptions} />
                      </div>

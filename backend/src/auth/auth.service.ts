@@ -1,47 +1,48 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
-import { LoginUserDto, RegisterUserDto } from './dto/auth.dto';
-import { UserRole } from '../common/enums';
+// backend/src/auth/auth.service.ts
+import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { UsersService } from '../users/users.service'; // Assuming you have a UsersService
+import { JwtService } from '@nestjs/jwt'; // Assuming you have JwtService
 import * as bcrypt from 'bcrypt';
+import { RegisterUserDto } from './dto/auth.dto';
+import { UserRole } from '../common/enums'; // Assuming UserRole enum exists
+import { User } from '../users/user.entity'; // Assuming User entity exists
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService,
+    private jwtService: JwtService, // Inject JwtService
   ) {}
 
+  // Method used by LocalStrategy to validate credentials
   async validateUser(email: string, pass: string): Promise<any> {
-    // Select the password_hash field explicitly for validation
-    const user = await this.usersService.findByEmail(email, true); // Pass true to select password_hash
-    if (user && user.password_hash) {
+    const user = await this.usersService.findByEmail(email); // Assuming findByEmail exists in UsersService
+
+    if (user && user.password_hash) { // Check if user and password_hash exist
       const isMatch = await bcrypt.compare(pass, user.password_hash);
       if (isMatch) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password_hash, ...result } = user; // Exclude password_hash from result
-        return result;
+        const { password_hash, ...result } = user; // Exclude password_hash
+        return result; // Return user object without password hash
       }
     }
-    return null;
+    return null; // Return null if user not found or password doesn't match
   }
 
-  async signup(registerUserDto: RegisterUserDto): Promise<any> {
-    const { email, password, confirm_password, ...userData } = registerUserDto;
+  async signup(registerUserDto: RegisterUserDto) {
+    const { email, password, ...userData } = registerUserDto;
 
-    if (password !== confirm_password) {
-        throw new BadRequestException('Password and Confirm Password do not match.');
-    }
-
+    // Check if user already exists by email (already present in the original code [1])
     const existingUser = await this.usersService.findByEmail(email);
     if (existingUser) {
       throw new ConflictException('Email address already in use.');
     }
 
-    // Hash the password before creating the user
+    // Hash the password before creating the user (already present in the original code [1])
     const saltRounds = 10; // Cost factor for hashing
     const password_hash = await bcrypt.hash(password, saltRounds);
 
+    // Create the new user (already present in the original code [1])
     const newUser = await this.usersService.create({
       email,
       password_hash,
@@ -52,29 +53,21 @@ export class AuthService {
       department_id: null, // Citizens do not have a department
     });
 
-     // Exclude password_hash from the returned user object
+    // Exclude password_hash from the returned user object (already present in the original code [1])
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password_hash: excludedPasswordHash, ...result } = newUser;
     return result;
   }
 
+  // Method used by AuthController after LocalStrategy validates the user
+  async login(user: any) { // 'user' here is the object returned by LocalStrategy.validate
+    // Generate JWT payload
+    const payload = { email: user.email, sub: user.id, role: user.role };
 
-  async login(user: any) {
-    const payload: any = { email: user.email, sub: user.id, role: user.role };
-
-     // Include departmentId in JWT payload for officers
-    if (user.role === UserRole.GovernmentOfficer || user.role === UserRole.Admin) {
-        // Ensure the department relationship is loaded or fetch it if needed
-        const fullUser = await this.usersService.findById(user.id);
-        if (fullUser && fullUser.department_id) {
-             payload.departmentId = fullUser.department_id;
-        }
-         // Alternatively, you could load the department relationship in validateUser
-         // and ensure it's part of the 'user' object passed to login.
-    }
-
+    // Return access token and user details
     return {
       access_token: this.jwtService.sign(payload),
+      user: user, // Include user details in the response for the frontend
     };
   }
 }

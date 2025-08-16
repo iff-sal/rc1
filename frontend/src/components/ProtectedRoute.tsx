@@ -1,36 +1,35 @@
-import React, { useContext } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
-import { AuthContext, AuthContextType } from '../contexts/AuthContext'; // Adjust the import path as needed
-import { UserRole } from '../common/enums'; // Adjust the import path and ensure this enum exists
+// frontend/src/components/ProtectedRoute.tsx
+import React, { ReactNode, useContext } from 'react';
+import { Navigate } from 'react-router-dom';
+import { AuthContext, AuthContextType } from '../contexts/AuthContext';
+import { UserRole } from '../types/common'; // Import UserRole
 
 interface ProtectedRouteProps {
-  requiredRoles?: UserRole[];
-  children: React.ReactNode; // Add this line
+  children: ReactNode;
+  allowedRoles: UserRole[]; // Add allowedRoles property
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requiredRoles }) => {
-  const { user, token, isLoading } = useContext(AuthContext) as AuthContextType;
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { user, loading } = useContext(AuthContext) as AuthContextType;
 
-  // You might want a loading state check here if user/token loading is asynchronous
-  if (isLoading) {
-    return <div>Loading...</div>; // Or a spinner component
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>; // Or a spinner
   }
 
-  if (!token || !user) {
-    // Redirect to login if no token or user
+  // If user is not logged in, redirect to login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRoles && !requiredRoles.includes(user.role)) {
-    // Redirect or show forbidden message if user's role is not allowed
-    // For simplicity, redirecting to login or a generic unauthorized page
-    console.warn(`User with role ${user.role} attempted to access a restricted route.`);
-    // You might want to redirect to a specific unauthorized page instead
-    return <Navigate to="/login" replace />;
+  // If user is logged in but role is not allowed, redirect to an unauthorized page or dashboard
+  if (!allowedRoles.includes(user.role)) {
+    // Determine redirect based on user role if not allowed
+    const redirectPath = user.role === UserRole.Citizen ? '/citizen/dashboard' : '/officer/dashboard';
+    return <Navigate to={redirectPath} replace />;
   }
 
-  // If authenticated and role matches (or no role required), render the child routes/elements
- return <>{children}</>;
+  // If user is logged in and role is allowed, render the children
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

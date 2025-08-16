@@ -3,14 +3,18 @@ import TopBar from '../../components/TopBar';
 import BottomNavigationBar from '../../components/BottomNavigationBar';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronRight, FaMoon, FaSun } from 'react-icons/fa'; // Import icons
-import { useAuth } from '../../contexts/AuthContext'; // Assuming AuthContext has user data
+import { useAuth } from '../../contexts/AuthContext'; // Assuming AuthContext has user data and fetchUser method
 import api from '../../api/axios'; // Assuming axios instance
 
 const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
+  // fetchUser is now used
   const { user, fetchUser } = useAuth(); // Get user from AuthContext, and a method to refresh user data
+
   const [isDarkMode, setIsDarkMode] = useState(false);
+  // receives_email_notifications now exists on User type
   const [receivesEmailNotifications, setReceivesEmailNotifications] = useState(user?.receives_email_notifications ?? true); // Default to true
+
 
   // --- Dark Mode Logic ---
   useEffect(() => {
@@ -49,6 +53,7 @@ const SettingsPage: React.FC = () => {
    useEffect(() => {
        // Ensure local state matches user data from AuthContext
        if (user) {
+           // receives_email_notifications now exists on User type
            setReceivesEmailNotifications(user.receives_email_notifications ?? true);
        }
    }, [user]); // Update when user object in AuthContext changes
@@ -66,11 +71,10 @@ const SettingsPage: React.FC = () => {
           receives_email_notifications: newNotificationStatus,
           // Only send this field, backend should merge
       });
-      // If update is successful, the AuthContext might need to be refreshed
-      // or rely on a re-login/page refresh to get the updated user data.
-      // For simplicity, we rely on the optimistic update. A more robust app
-      // would refetch user data: await fetchUser();
        console.log(`Notifications preference updated to: ${newNotificationStatus}`);
+
+       // Fetch updated user data after successful save
+       await fetchUser(); // Added fetchUser call
 
     } catch (error) {
       console.error('Error updating notification preference:', error);

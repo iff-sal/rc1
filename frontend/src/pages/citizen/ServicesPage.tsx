@@ -73,7 +73,7 @@ const ServicesPage: React.FC = () => {
   };
 
    // Extract unique categories from services
-   const uniqueCategories = Array.from(new Set(services.map(service => service.category).filter(Boolean))) as string[];
+  //  const uniqueCategories = Array.from(new Set(services.map(service => service.category).filter(Boolean))) as string[];
 
 
   return (

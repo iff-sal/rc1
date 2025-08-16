@@ -3,9 +3,11 @@ import TopBar from '../../components/TopBar';
 import BottomNavigationBar from '../../components/BottomNavigationBar';
 import api from '../../api/axios';
 import { useAuth } from '../../contexts/AuthContext';
-import { DocumentType, DocumentStatus } from '../../../backend/src/common/enums'; // Assuming enums are accessible or redefine
+// Removed the backend enum import as enums are redefined below
 import { FaFileAlt, FaUpload } from 'react-icons/fa';
 import Modal from 'react-modal'; // You might need to install react-modal
+import { format } from 'date-fns'; // Import format from date-fns
+
 
 // Redefine enums if not directly accessible from backend src
 enum FrontendDocumentType {
@@ -169,6 +171,7 @@ const DocumentsPage: React.FC = () => {
                 <FaFileAlt className="text-blue-500 text-2xl mr-4" />
                 <div className="flex-grow">
                   <h3 className="text-lg font-semibold text-gray-800">{getDocumentTypeDisplayName(document.document_type)}</h3>
+                  {/* Using the imported format function */}
                   <p className="text-sm text-gray-600">Uploaded: {format(new Date(document.uploaded_at), 'PPP')}</p>
                   {document.officer_comments && (
                       <p className="text-sm text-gray-700 mt-1 italic">Comments: {document.officer_comments}</p>

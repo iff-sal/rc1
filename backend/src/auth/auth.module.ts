@@ -1,28 +1,29 @@
+// backend/src/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UsersModule } from '../users/users.module';
+import { UsersModule } from '../users/users.module'; // Import UsersModule
 import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './jwt.strategy';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt'; // Import JwtModule
+import { JwtStrategy } from './jwt.strategy'; // Import JwtStrategy
+import { LocalStrategy } from './local.strategy'; // Import LocalStrategy
+import { ConfigService, ConfigModule } from '@nestjs/config'; // Import ConfigService and ConfigModule for JWT secret
 
 @Module({
   imports: [
-    UsersModule,
+    UsersModule, // Needs access to UsersService
     PassportModule,
-    JwtModule.registerAsync({
+    JwtModule.registerAsync({ // Configure JwtModule asynchronously to use ConfigService
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1h' }, // Adjust token expiration as needed
+        secret: configService.get<string>('JWT_SECRET'), // Get secret from configuration
+        signOptions: { expiresIn: '60m' }, // Example: token expires in 60 minutes
       }),
       inject: [ConfigService],
     }),
-    ConfigModule, // Import ConfigModule to use ConfigService
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService], // Export AuthService if needed elsewhere
+  providers: [AuthService, LocalStrategy, JwtStrategy], // Provide the AuthService and strategies
+  exports: [AuthService, JwtModule], // Export AuthService and JwtModule if needed by other modules
 })
 export class AuthModule {}

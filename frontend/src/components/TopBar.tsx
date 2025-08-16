@@ -1,14 +1,14 @@
 import React from 'react';
 import { FaBell, FaGlobe, FaUserCircle } from 'react-icons/fa'; // Import icons
 import { useAuth } from '../contexts/AuthContext'; // Assuming useAuth hook is in contexts/AuthContext
-import { UserRole } from '../../backend/src/common/enums'; // Assuming enums are accessible or redefine
+// import { UserRole } from '../types/common'; // Import UserRole from frontend types
 
 // Redefine UserRole if not directly accessible
-enum FrontendUserRole {
-    Citizen = 'citizen',
-    GovernmentOfficer = 'government_officer',
-    Admin = 'admin',
-}
+// enum FrontendUserRole {
+//     Citizen = 'citizen',
+//     GovernmentOfficer = 'government_officer',
+//     Admin = 'admin',
+// }
 
 
 const TopBar: React.FC = () => {

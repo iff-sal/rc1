@@ -1,0 +1,322 @@
+import React, { useState, useEffect } from 'react';
+import TopBar from '../../components/TopBar'; // Import TopBarProps
+import { useParams, useNavigate } from 'react-router-dom'; // Import useParams and useNavigate
+import api from '../../api/axios'; // Assuming axios instance
+// Removed the backend enum import as enums are redefined below or not needed directly
+import { FaFileAlt, FaSpinner } from 'react-icons/fa'; // Import only used icons
+
+
+// Redefine types/enums if not directly accessible from backend src
+interface Appointment {
+  id: string;
+  service: {
+    id: string;
+    name: string;
+  };
+  citizen: {
+    id: number;
+    first_name?: string;
+    last_name?: string;
+    email: string;
+    phone_number?: string;
+    national_id_number?: string;
+  };
+  appointment_date_time: string;
+  status: string; // Use string, map to display name if needed
+  officer?: { // Officer might not be assigned yet
+    id: number;
+    first_name?: string;
+    last_name?: string;
+  };
+  documents?: Document[]; // Assuming appointments can have associated documents
+  officer_notes?: string;
+  feedback?: any; // Assuming feedback is related, type as needed
+}
+
+interface Document {
+    id: string;
+    document_type: string; // Use string, map to display name if needed
+    status: string; // Use string, map to display name if needed
+    file_path: string; // URL to access the file
+    uploaded_at: string;
+    officer_comments?: string;
+}
+
+// Frontend display names for enums (optional, can be in a common types file)
+const getAppointmentStatusDisplayName = (status: string): string => {
+    switch (status) {
+        case 'pending': return 'Pending Confirmation';
+        case 'confirmed': return 'Confirmed';
+        case 'completed': return 'Completed';
+        case 'cancelled_by_citizen': return 'Cancelled by Citizen';
+        case 'cancelled_by_officer': return 'Cancelled by Officer';
+        case 'rescheduled': return 'Rescheduled';
+        default: return status;
+    }
+};
+
+const getDocumentStatusDisplayName = (status: string): string => {
+    switch (status) {
+        case 'uploaded': return 'Uploaded';
+        case 'under_review': return 'Under Review';
+        case 'approved': return 'Approved';
+        case 'rejected': return 'Rejected';
+        default: return status;
+    }
+};
+
+const getDocumentTypeDisplayName = (type: string): string => {
+    switch (type) {
+        case 'national_identity_card': return 'National Identity Card';
+        case 'passport': return 'Passport';
+        case 'driving_license': return 'Driving License';
+        case 'birth_certificate': return 'Birth Certificate';
+        case 'application_form': return 'Application Form';
+        case 'photograph': return 'Photograph';
+        case 'other': return 'Other';
+        default: return type.replace(/_/g, ' '); // Basic formatting
+    }
+};
+
+
+const AppointmentDetailPage: React.FC = () => {
+  const { appointmentId } = useParams<{ appointmentId: string }>(); // Get appointment ID from URL
+  const navigate = useNavigate(); // navigate is now used by TopBar's back button
+  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+   // State for officer notes (if editable)
+  const [officerNotes, setOfficerNotes] = useState<string>('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+
+  useEffect(() => {
+    const fetchAppointmentDetails = async () => {
+      if (!appointmentId) {
+        setError('Appointment ID is missing.');
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await api.get(`/api/appointments/${appointmentId}`); // Adjust endpoint if needed
+        setAppointment(response.data);
+         // Initialize notes state if data is fetched
+        setOfficerNotes(response.data.officer_notes || '');
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching appointment details:', err);
+        setError('Failed to load appointment details.');
+        setLoading(false);
+      }
+    };
+
+    fetchAppointmentDetails();
+  }, [appointmentId]); // Refetch if appointmentId changes
+
+
+   const handleSaveNotes = async () => {
+       if (!appointmentId || isSavingNotes) return;
+       setIsSavingNotes(true);
+       try {
+            // Assuming a PUT or PATCH endpoint for updating appointment details
+           await api.put(`/api/appointments/${appointmentId}/notes`, { notes: officerNotes }); // Adjust endpoint and payload
+           console.log('Officer notes saved successfully.');
+           // TODO: Show success message
+       } catch (error) {
+           console.error('Error saving officer notes:', error);
+           // TODO: Show error message to user
+       } finally {
+           setIsSavingNotes(false);
+       }
+   };
+
+    // Placeholder functions for actions (implementation needed)
+    const handleMarkCompleted = async () => {
+        if (!appointmentId) return;
+         // TODO: Implement API call to update status
+         console.log(`Marking appointment ${appointmentId} as completed.`);
+         // await api.put(`/api/appointments/${appointmentId}/status`, { status: 'completed' });
+         // After successful update, refetch appointment details or navigate
+         // fetchAppointmentDetails(); or navigate('/officer/dashboard');
+    };
+
+     const handleCancel = async () => {
+        if (!appointmentId) return;
+         // TODO: Implement API call to cancel
+         console.log(`Cancelling appointment ${appointmentId}.`);
+         // await api.put(`/api/appointments/${appointmentId}/status`, { status: 'cancelled_by_officer' });
+         // After successful update, refetch appointment details or navigate
+         // fetchAppointmentDetails(); or navigate('/officer/dashboard');
+     };
+
+     const handleReschedule = async () => {
+         if (!appointmentId) return;
+         // TODO: Implement rescheduling flow (might navigate to a different page)
+         console.log(`Rescheduling appointment ${appointmentId}.`);
+         navigate(`/officer/appointments/${appointmentId}/reschedule`); // Example navigation - makes navigate used
+     };
+
+    // Placeholder for document actions (implementation needed)
+     const handleReviewDocument = (documentId: string) => {
+         console.log(`Reviewing document ${documentId}.`);
+         // TODO: Implement document review flow (e.g., open modal, navigate to document review page)
+         // navigate(`/officer/documents/${documentId}`); // Example navigation - uncomment if needed
+     };
+
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-100">
+        {/* TopBar with back button */}
+        {/* TopBarProps is now imported and should be recognized */}
+        <TopBar title="Loading Appointment..." showBackButton={true} />
+        <div className="flex-grow p-4 text-center text-gray-600">
+          <FaSpinner className="animate-spin inline mr-2" /> Loading details...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-100">
+        {/* TopBar with back button */}
+         {/* TopBarProps is now imported and should be recognized */}
+        <TopBar title="Error Loading" showBackButton={true} />
+        <div className="flex-grow p-4 text-center text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!appointment) {
+      return (
+         <div className="flex flex-col min-h-screen bg-gray-100">
+              {/* TopBar with back button */}
+              {/* TopBarProps is now imported and should be recognized */}
+             <TopBar title="Not Found" showBackButton={true} />
+             <div className="flex-grow p-4 text-center text-gray-600">Appointment not found.</div>
+         </div>
+      );
+  }
+
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-100">
+      {/* TopBar with back button */}
+       {/* TopBarProps is now imported and should be recognized */}
+      <TopBar title="Appointment Details" showBackButton={true} />
+
+      <div className="flex-grow p-4 pb-4">
+
+        {/* Appointment Details Card */}
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Appointment Information</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+            <div>
+              <p><span className="font-semibold">Service:</span> {appointment.service?.name || 'N/A'}</p>
+              <p><span className="font-semibold">Date:</span> {appointment.appointment_date_time ? new Date(appointment.appointment_date_time).toLocaleDateString() : 'N/A'}</p>
+              <p><span className="font-semibold">Time:</span> {appointment.appointment_date_time ? new Date(appointment.appointment_date_time).toLocaleTimeString() : 'N/A'}</p>
+              <p><span className="font-semibold">Status:</span> {getAppointmentStatusDisplayName(appointment.status)}</p>
+               {appointment.officer && (
+                   <p><span className="font-semibold">Assigned Officer:</span> {`${appointment.officer.first_name} ${appointment.officer.last_name}`.trim() || 'N/A'}</p>
+               )}
+            </div>
+            <div>
+               <p><span className="font-semibold">Citizen:</span> {`${appointment.citizen?.first_name} ${appointment.citizen?.last_name}`.trim() || appointment.citizen?.email || 'N/A'}</p>
+               {appointment.citizen?.phone_number && <p><span className="font-semibold">Phone:</span> {appointment.citizen.phone_number}</p>}
+               {appointment.citizen?.email && <p><span className="font-semibold">Email:</span> {appointment.citizen.email}</p>}
+               {appointment.citizen?.national_id_number && <p><span className="font-semibold">National ID:</span> {appointment.citizen.national_id_number}</p>}
+            </div>
+          </div>
+
+           {/* Officer Notes Section */}
+           <div className="mt-6 border-t pt-4 border-gray-200">
+                <h3 className="text-lg font-semibold mb-2 text-gray-800">Officer Notes</h3>
+                <textarea
+                    value={officerNotes}
+                    onChange={(e) => setOfficerNotes(e.target.value)}
+                    className="w-full p-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
+                    rows={4}
+                    placeholder="Add or edit notes about this appointment..."
+                ></textarea>
+                 <button
+                    onClick={handleSaveNotes}
+                    disabled={isSavingNotes}
+                    className={`mt-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-yellow-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                 >
+                     {isSavingNotes ? <FaSpinner className="animate-spin inline mr-2" /> : 'Save Notes'}
+                 </button>
+           </div>
+        </div>
+
+        {/* Associated Documents Section */}
+        {appointment.documents && appointment.documents.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                <h2 className="text-xl font-bold mb-4 text-gray-800">Associated Documents</h2>
+                <div className="space-y-3">
+                    {appointment.documents.map(document => (
+                         <div key={document.id} className="border border-gray-200 p-4 rounded-md flex items-center justify-between">
+                            <div className="flex items-center">
+                                <FaFileAlt className="text-blue-500 text-2xl mr-4" />
+                                <div>
+                                     <h3 className="text-lg font-semibold text-gray-800">{getDocumentTypeDisplayName(document.document_type)}</h3>
+                                     <p className="text-sm text-gray-600">Status: {getDocumentStatusDisplayName(document.status)}</p>
+                                      {document.officer_comments && (
+                                          <p className="text-sm text-gray-700 mt-1 italic">Comments: {document.officer_comments}</p>
+                                      )}
+                                     <p className="text-sm text-gray-600">Uploaded: {new Date(document.uploaded_at).toLocaleDateString()}</p> {/* Use toLocaleDateString for simplicity */}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => handleReviewDocument(document.id)}
+                                className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors duration-150"
+                            >
+                                Review Document
+                            </button>
+                         </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+
+        {/* Action Buttons (Officer Actions) */}
+         <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Actions</h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Show actions based on appointment status */}
+                {appointment.status === 'confirmed' && (
+                    <>
+                        <button onClick={handleMarkCompleted} className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200">
+                           Mark as Completed
+                        </button>
+                         <button onClick={handleReschedule} className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-200">
+                           Reschedule
+                        </button>
+                         <button onClick={handleCancel} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200">
+                           Cancel Appointment
+                        </button>
+                    </>
+                )}
+                 {/* Add other status-based actions */}
+                  {/* e.g., if status is 'pending', maybe 'Confirm Appointment' */}
+                  {/* e.g., if status is 'completed', maybe 'View Feedback' */}
+                  {/* e.g., if status is 'cancelled', maybe 'View Reason' */}
+
+                {/* Generic actions */}
+                 {/* <button className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-200">
+                    Print Details
+                 </button> */}
+             </div>
+         </div>
+
+      </div>
+      {/* No bottom nav */}
+    </div>
+  );
+};
+
+export default AppointmentDetailPage;

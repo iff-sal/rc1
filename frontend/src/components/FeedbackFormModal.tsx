@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { FaStar } from 'react-icons/fa'; // Import star icon
 import api from '../api/axios'; // Assuming axios instance
-import { CreateFeedbackDto } from '../../backend/src/feedback/dto/feedback.dto'; // Assuming DTO is accessible or redefine
 
+// Redefine DTO in frontend types
 // Redefine DTO if not accessible
 interface FrontendCreateFeedbackDto {
   appointmentId?: string;
@@ -41,7 +41,7 @@ const FeedbackFormModal: React.FC<FeedbackFormModalProps> = ({ isOpen, onClose, 
   }, [isOpen]);
 
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => { // Added type for event
     event.preventDefault();
     if (rating === 0) {
       setError('Please provide a rating.');

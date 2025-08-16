@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import TopBar from '../../components/TopBar';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaSpinner } from 'react-icons/fa'; // Import icons
+import { FaSpinner } from 'react-icons/fa'; // Import icons (removed FaArrowLeft)
 import { useAuth } from '../../contexts/AuthContext'; // Assuming AuthContext has user data and fetchUser method
 import api from '../../api/axios'; // Assuming axios instance
-import { UpdateUserDto } from '../../../backend/src/users/dto/user.dto'; // Assuming DTO is accessible or redefine
+// Removed the backend DTO import as interface is redefined below
 
 
 // Redefine DTO if not accessible
@@ -17,28 +17,36 @@ interface FrontendUpdateUserDto {
 
 const ProfileEditPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, fetchUser } = useAuth(); // Get user data and a method to refresh it
+  // Now fetchUser exists on AuthContextType
+  const { user, loading: authLoading, fetchUser } = useAuth(); // Get user data and a method to refresh it from the updated AuthContext
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // Removed unused local loading state: const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false); // State for save operation
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Load user data into form fields on mount
+  // Load user data into form fields on mount or when user data from context changes
   useEffect(() => {
-    if (user) {
-        setFirstName(user.first_name || '');
-        setLastName(user.last_name || '');
-        setPhoneNumber(user.phone_number || '');
-        setLoading(false);
-    } else {
-        // If user is null, maybe redirect to login or show an error
-        setLoading(false);
-        setError('User data not available.');
+    // Use authLoading from context to determine if user data is still being fetched initially
+    if (!authLoading) {
+        if (user) {
+            // last_name and phone_number now exist on User type
+            setFirstName(user.first_name || '');
+            setLastName(user.last_name || '');
+            setPhoneNumber(user.phone_number || '');
+            // Removed setLoading(false);
+        } else {
+            // If user is null after authLoading is false, user is not logged in
+            // Removed setLoading(false);
+            // Optionally redirect to login or show an error
+             setError('User data not available. Please log in.');
+             // navigate('/login'); // Consider redirecting if this page requires authentication
+        }
     }
-  }, [user]);
+  }, [user, authLoading, navigate]); // Add navigate to dependency array as per react-hooks/exhaustive-deps rule
 
 
   const handleSave = async (event: React.FormEvent) => {
@@ -68,7 +76,7 @@ const ProfileEditPage: React.FC = () => {
       await api.put(`/api/users/me`, updatePayload);
 
       setSuccess('Profile updated successfully!');
-      // Refresh user data in AuthContext
+      // Refresh user data in AuthContext using the new fetchUser method
       await fetchUser(); // This is important to keep the user object in sync
 
        // Optional: Redirect back to settings after a delay
@@ -87,24 +95,33 @@ const ProfileEditPage: React.FC = () => {
   };
 
 
-   if (loading) {
+   // Use authLoading from context for the initial loading state
+   if (authLoading) {
        return (
            <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-               <TopBar />
+               {/* TopBar might need user data, so render it after authLoading */}
+               { !authLoading && <TopBar />}
                <div className="flex-grow p-4 text-center text-gray-600 dark:text-gray-300">Loading profile data...</div>
            </div>
        );
    }
 
+    // If not authLoading but user is null, maybe show an error or redirect
+   if (!user) {
+        return (
+           <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+               <TopBar />
+               <div className="flex-grow p-4 text-center text-red-600 dark:text-red-300">{error || 'User data not available. Please log in.'}</div>
+           </div>
+       );
+   }
+
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       {/* Top Bar with Back Button */}
-      <div className="bg-white dark:bg-gray-800 shadow-md p-4 flex items-center">
-        <button onClick={() => navigate(-1)} className="mr-4 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-          <FaArrowLeft className="text-xl" />
-        </button>
-        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Edit Profile</h1>
-      </div>
+      {/* Render TopBar only when auth is not loading */}
+      { !authLoading && <TopBar />}
 
       <div className="flex-grow p-4 pb-4">
 

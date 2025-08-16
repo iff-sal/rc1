@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaPaperPlane, FaMicrophone, FaPaperclip } from 'react-icons/fa'; // Import icons
+import { FaArrowLeft, FaPaperPlane, FaSpinner } from 'react-icons/fa'; // Import necessary icons
 import api from '../../api/axios'; // Assuming axios instance is set up
-import { AiChatResponseDto } from '../../../backend/src/ai-chat/dto/ai-chat.dto'; // Assuming DTOs are accessible or redefine
+// Removed the backend DTO import as interfaces are redefined below
+// Removed unused icons: FaMicrophone, FaPaperclip
+
 
 // Redefine DTO if not directly accessible from backend src
 interface FrontendAiChatResponseDto {
@@ -25,148 +27,144 @@ interface Message {
 const AIAssistantPage: React.FC = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [loading, setLoading] = useState(false); // State for API loading
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null); // Ref for auto-scrolling
 
-  // Scroll to the bottom of messages on update
+  // Auto-scroll to the latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleSendMessage = async () => {
+    if (input.trim() === '') return;
 
-  const handleSend = async () => {
-    if (inputMessage.trim() === '' || loading) {
-      return; // Don't send empty messages or while loading
-    }
-
-    const userMessage: Message = { text: inputMessage, sender: 'user' };
-    setMessages(prevMessages => [...prevMessages, userMessage]); // Add user message instantly
-    setInputMessage(''); // Clear input
-    setLoading(true); // Start loading
+    const userMessage: Message = { text: input, sender: 'user' };
+    setMessages([...messages, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
     try {
-      const response = await api.post('/api/ai-chat', { query: inputMessage });
-      const aiResponseData: FrontendAiChatResponseDto = response.data;
-
-      const aiMessage: Message = {
-        text: aiResponseData.responseText,
+      const response = await api.post<FrontendAiChatResponseDto>('/ai-chat', { prompt: input }); // Adjust endpoint if needed
+      const aiResponse: Message = {
+        text: response.data.responseText,
         sender: 'ai',
-        suggestedAction: aiResponseData.suggestedActionType ? {
-            type: aiResponseData.suggestedActionType,
-            value: aiResponseData.suggestedActionValue,
-            details: aiResponseData.suggestedActionDetails
-        } : undefined
+        suggestedAction: response.data.suggestedActionType ? {
+          type: response.data.suggestedActionType,
+          value: response.data.suggestedActionValue,
+          details: response.data.suggestedActionDetails,
+        } : undefined,
       };
-      setMessages(prevMessages => [...prevMessages, aiMessage]); // Add AI response
-
+      setMessages(prevMessages => [...prevMessages, aiResponse]);
     } catch (error) {
       console.error('Error sending message to AI:', error);
-      // Add an error message to the chat
-      const errorMessage: Message = { text: 'Sorry, I could not get a response from the AI. Please try again later.', sender: 'ai' };
+      const errorMessage: Message = { text: 'Sorry, I could not process your request at this time.', sender: 'ai' };
       setMessages(prevMessages => [...prevMessages, errorMessage]);
     } finally {
-      setLoading(false); // End loading
+      setIsLoading(false);
     }
   };
 
-   const handleSuggestedActionClick = (action: Message['suggestedAction']) => {
-        if (!action || !action.type || !action.value) {
-            console.warn('Attempted to click a suggested action with incomplete data:', action);
-            return;
+    const handleSuggestedAction = (actionType?: string, actionValue?: string, actionDetails?: any) => {
+      // Implement logic based on the suggested action type
+      console.log('Suggested Action:', actionType, actionValue, actionDetails);
+      if (actionType === 'navigate' && actionValue) {
+        navigate(actionValue);
+      }
+      // Add other action types here (e.g., 'book_appointment', 'upload_document')
+      // You might want to open a modal or navigate to a specific page with details
+       if (actionType === 'suggest_service_booking' && actionDetails?.serviceId) {
+            // Example: Navigate to a service booking page with pre-filled service ID
+            navigate(`/citizen/services/${actionDetails.serviceId}/book`);
         }
-
-        // Implement navigation based on action type
-        if (action.type === 'NAVIGATE_TO_SERVICE' && action.value) {
-            console.log(`Navigating to service: ${action.value}`);
-             navigate(`/services/${action.value}`); // Navigate to service booking page
+        // Example: Handle a complex action like "upload document" which might need a modal or specific flow
+        if (actionType === 'request_document_upload' && actionDetails?.documentType) {
+            // This might trigger a modal or navigate to the document upload page
+             alert(`Suggested action: Upload document of type "${actionDetails.documentType}". Implementation needed.`);
+             // navigate('/citizen/documents'); // Or navigate to a specific upload component
         }
-        // Add other action types as needed (e.g., OPEN_DOCUMENT, SHOW_FAQ)
-        else {
-            console.warn(`Unknown suggested action type: ${action.type}`);
-             // Optional: Display a message to the user that the action isn't supported
-        }
-   };
+    };
 
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      event.preventDefault(); // Prevent default form submission
-      handleSend();
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, allow new line with Shift + Enter
+      e.preventDefault();
+      handleSendMessage();
     }
   };
-
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen">
       {/* Top Bar with Back Button */}
-      <div className="bg-white shadow-md p-4 flex items-center">
-        <button onClick={() => navigate(-1)} className="mr-4 text-gray-700 hover:text-gray-900">
-          <FaArrowLeft className="text-xl" />
+      <div className="bg-primary text-white p-4 flex items-center shadow-md">
+        <button onClick={() => navigate(-1)} className="flex items-center text-white mr-4">
+          <FaArrowLeft className="mr-2" /> Back
         </button>
-        <h1 className="text-xl font-semibold text-gray-800">AI Assistant</h1>
+        <h1 className="text-xl font-bold">AI Assistant</h1>
       </div>
 
-      {/* Chat Messages Area */}
-      <div className="flex-grow overflow-y-auto p-4 space-y-4 pb-16"> {/* Added pb-16 for input overlap */}
+      {/* Chat Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-100">
         {messages.map((message, index) => (
           <div
             key={index}
             className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[80%] p-3 rounded-lg ${
+              className={`p-3 rounded-lg max-w-xs ${
                 message.sender === 'user'
-                  ? 'bg-blue-500 text-white rounded-br-none'
-                  : 'bg-gray-300 text-gray-800 rounded-bl-none'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-300 text-gray-800'
               }`}
             >
               <p>{message.text}</p>
-               {/* Render suggested action button */}
-               {message.sender === 'ai' && message.suggestedAction?.type && message.suggestedAction.value && (
-                  <button
-                      onClick={() => handleSuggestedActionClick(message.suggestedAction)}
-                      className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors duration-150"
-                  >
-                      {message.suggestedAction.details?.name ? `Book ${message.suggestedAction.details.name}` : 'Suggested Action'} {/* Use service name if available */}
-                  </button>
+               {message.suggestedAction && (
+                   <div className="mt-2 text-sm text-blue-800 cursor-pointer hover:underline"
+                        onClick={() => handleSuggestedAction(message.suggestedAction?.type, message.suggestedAction?.value, message.suggestedAction?.details)}>
+                       Suggested Action: Click to {message.suggestedAction.type}...
+                   </div>
                )}
             </div>
           </div>
         ))}
-        {/* Auto-scroll anchor */}
-        <div ref={messagesEndRef} />
-         {loading && (
+         {isLoading && (
              <div className="flex justify-start">
-                <div className="max-w-[80%] p-3 rounded-lg bg-gray-300 text-gray-800 rounded-bl-none">
-                   <FaSpinner className="animate-spin inline mr-2" /> Thinking...
-                </div>
+                 <div className="p-3 rounded-lg max-w-xs bg-gray-300 text-gray-800">
+                    {/* Using the imported FaSpinner */}
+                    <FaSpinner className="animate-spin inline mr-2" /> Thinking...
+                 </div>
              </div>
          )}
+        <div ref={messagesEndRef} /> {/* Invisible element to scroll to */}
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t flex items-center fixed bottom-0 w-full"> {/* Fixed position */}
-         {/* Placeholders for mic and attachment (optional) */}
-         {/* <button className="mr-2 text-gray-500"><FaMicrophone className="text-xl" /></button> */}
-         {/* <button className="mr-2 text-gray-500"><FaPaperclip className="text-xl" /></button> */}
+      <div className="p-4 bg-white border-t flex items-center">
+        {/* File Attachment Icon - Currently unused */}
+        {/* <button className="mr-2 text-gray-500 hover:text-gray-700">
+            <FaPaperclip className="text-xl" />
+        </button> */}
 
         <input
           type="text"
-          placeholder="Type your message..."
-          className="flex-grow px-4 py-2 rounded-full bg-gray-200 focus:outline-none focus:ring-2 focus:ring-primary"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={loading} // Disable input while loading
+          className="flex-1 border rounded-full py-2 px-4 mr-2 focus:outline-none focus:ring-primary focus:border-primary"
+          placeholder="Type a message..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          disabled={isLoading} // Disable input while loading
         />
         <button
-          onClick={handleSend}
-          className={`ml-4 px-4 py-2 bg-blue-500 text-white rounded-full flex items-center justify-center ${inputMessage.trim() === '' || loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'}`}
-          disabled={inputMessage.trim() === '' || loading} // Disable button
+          onClick={handleSendMessage}
+          className="bg-primary text-white rounded-full p-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isLoading || input.trim() === ''} // Disable button while loading or input is empty
         >
           <FaPaperPlane className="text-xl" />
         </button>
+        {/* Microphone Icon - Currently unused */}
+        {/* <button className="ml-2 text-gray-500 hover:text-gray-700" disabled={isLoading}>
+            <FaMicrophone className="text-xl" />
+        </button> */}
       </div>
     </div>
   );

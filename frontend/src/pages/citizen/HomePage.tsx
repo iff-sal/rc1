@@ -4,7 +4,8 @@ import BottomNavigationBar from '../../components/BottomNavigationBar';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../api/axios';
 import { format, isPast } from 'date-fns'; // Import isPast
-import { Link, useNavigate } from 'react-router-dom';
+// import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { FaCommentDots } from 'react-icons/fa';
 import FeedbackFormModal from '../../components/FeedbackFormModal'; // Import FeedbackFormModal
 
@@ -42,9 +43,9 @@ const HomePage: React.FC = () => {
         });
 
         // Filter for display: Upcoming (Pending, Confirmed, Rescheduled) vs Past (Completed, Cancelled)
-         const now = new Date();
+        //  const now = new Date();
          const upcoming = response.data.filter((app: Appointment) => !isPast(new Date(app.appointment_date_time)) && (app.status === 'pending' || app.status === 'confirmed' || app.status === 'rescheduled'));
-         const past = response.data.filter((app: Appointment) => isPast(new Date(app.appointment_date_time)) || app.status === 'completed' || app.status.startsWith('cancelled'));
+        //  const past = response.data.filter((app: Appointment) => isPast(new Date(app.appointment_date_time)) || app.status === 'completed' || app.status.startsWith('cancelled'));
 
          // For this task, we only display upcoming in the "Upcoming Appointments" section
          setUpcomingAppointments(upcoming);
