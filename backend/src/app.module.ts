@@ -8,9 +8,9 @@ import { ServicesModule } from './services/services.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { DocumentsModule } from './documents/documents.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { AnalyticsModule } from './analytics/analytics.module';
+import { AnalyticsModule } from './analytics/analytics.module'; // Import AnalyticsModule
 import { FeedbackModule } from './feedback/feedback.module';
-import { AiChatModule } from './ai-chat/ai-chat.module'; // Import AiChatModule
+import { AiChatModule } from './ai-chat/ai-chat.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -19,7 +19,7 @@ import { Department } from './departments/department.entity';
 import { Service } from './services/service.entity';
 import { Appointment } from './appointments/appointment.entity';
 import { Document } from './documents/document.entity';
-import { AiKnowledgeBase } from './ai-chat/ai-knowledge-base.entity'; // Import AiKnowledgeBase entity
+import { AiKnowledgeBase } from './ai-chat/ai-knowledge-base.entity';
 
 
 @Module({
@@ -33,7 +33,7 @@ import { AiKnowledgeBase } from './ai-chat/ai-knowledge-base.entity'; // Import 
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Department, Service, Appointment, Document, AiKnowledgeBase], // Include AiKnowledgeBase entity
+        entities: [User, Department, Service, Appointment, Document, AiKnowledgeBase],
         synchronize: false,
         autoLoadEntities: true,
       }),
@@ -46,9 +46,9 @@ import { AiKnowledgeBase } from './ai-chat/ai-knowledge-base.entity'; // Import 
     AppointmentsModule,
     DocumentsModule,
     NotificationsModule,
-    AnalyticsModule,
+    AnalyticsModule, // Include AnalyticsModule
     FeedbackModule,
-    AiChatModule, // Include AiChatModule
+    AiChatModule,
     SchedulerModule,
   ],
   controllers: [AppController],
