@@ -11,13 +11,27 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { AiChatModule } from './ai-chat/ai-chat.module';
-import { TypeOrmModule } from '@nestjs/typeorm'; // Assuming TypeORM is used
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { User } from './users/user.entity'; // Import User entity
 
 @Module({
   imports: [
-    // Configure TypeOrmModule here with your database connection details
-    // TypeOrmModule.forRoot({...}),
-
+    ConfigModule.forRoot({
+      isGlobal: true, // Makes ConfigModule available globally
+      load: [], // You can add configuration loading functions here if needed
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get<string>('DATABASE_URL'),
+        entities: [User], // Include User entity here
+        synchronize: false, // Set to true for development, false for production (be cautious with true in production)
+        autoLoadEntities: true,
+      }),
+      inject: [ConfigService],
+    }),
     AuthModule,
     UsersModule,
     DepartmentsModule,
