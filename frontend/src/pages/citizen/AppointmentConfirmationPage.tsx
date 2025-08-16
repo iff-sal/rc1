@@ -49,7 +49,7 @@ const AppointmentConfirmationPage: React.FC = () => {
           Go to Home
         </button>
          <button
-          onClick={() => navigate('/citizens/me/appointments')} {/* Assuming a route for viewing all citizen appointments */}
+          onClick={() => navigate('/citizens/me/appointments')}
           className="w-full sm:w-auto px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold text-lg hover:bg-gray-600 transition-colors duration-200"
         >
           View My Appointments
