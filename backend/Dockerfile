@@ -20,6 +20,7 @@ RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/.env ./.env
-COPY --from=builder /app/uploads ./uploads # Assuming uploads are copied from builder or will be a volume
+ # Assuming uploads are copied from builder or will be a volume
+COPY --from=builder /app/uploads ./uploads
 
 CMD [ "node", "dist/main" ]
