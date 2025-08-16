@@ -3,8 +3,9 @@ import TopBar from '../../components/TopBar';
 import BottomNavigationBar from '../../components/BottomNavigationBar';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../api/axios';
-import { Link, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaCommentDots } from 'react-icons/fa'; // Import icon for chat bubble
 
 interface Appointment {
     id: string;
@@ -139,6 +140,15 @@ const HomePage: React.FC = () => {
              ))}
           </div>
         </div>
+
+         {/* Floating AI Chat Bubble */}
+         <button
+            onClick={() => navigate('/ai-assistant')}
+            className="fixed bottom-24 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors duration-200 focus:outline-none z-50" // Position and style the bubble
+            aria-label="Open AI Assistant Chat"
+         >
+             <FaCommentDots className="text-2xl" />
+         </button>
 
 
       </div>

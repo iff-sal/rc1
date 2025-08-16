@@ -10,6 +10,7 @@ import ServiceBookingPage from './pages/citizen/ServiceBookingPage';
 import AppointmentConfirmationPage from './pages/citizen/AppointmentConfirmationPage';
 import DocumentsPage from './pages/citizen/DocumentsPage';
 import AppointmentDetailPage from './pages/officer/AppointmentDetailPage';
+import AIAssistantPage from './pages/citizen/AIAssistantPage'; // Import AIAssistantPage
 
 
 function AppRoutes() {
@@ -69,6 +70,15 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route // AI Assistant Page
+         path="/ai-assistant"
+         element={
+            <ProtectedRoute requiredRoles={['citizen']}>
+                <AIAssistantPage />
+            </ProtectedRoute>
+         }
+      />
+
        {/* TODO: Add route for viewing individual citizen appointment details if needed */}
        {/* <Route
             path="/appointments/:id"
@@ -92,7 +102,7 @@ function AppRoutes() {
         <Route
             path="/officer/appointments/:appointmentId"
             element={
-              <ProtectedRoute requiredRoles={['government_officer', 'admin']}> {/* Officers and Admins can view officer details */}
+              <ProtectedRoute requiredRoles={['government_officer', 'admin']}>
                  <AppointmentDetailPage />
               </ProtectedRoute>
             }
