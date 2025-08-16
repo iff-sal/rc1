@@ -52,7 +52,7 @@ export class User {
   @OneToMany(() => Document, document => document.user)
   documents: Document[]; // Documents uploaded by this user
 
-  @OneToMany(() => Feedback, feedback => feedback.user)
+  @OneToMany(() => Feedback, feedback => feedback.citizen)
   feedback: Feedback[]; // Feedback submitted by this user
 
   @ManyToOne(() => Department)

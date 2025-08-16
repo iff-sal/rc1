@@ -4,7 +4,10 @@ import { MulterModule } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service';
 import { DocumentsController } from './documents.controller';
 import { Document } from './document.entity';
+import { UsersModule } from '../users/users.module'; // Import UsersModule
 import { AuthModule } from '../auth/auth.module'; // Import AuthModule for guards
+import { NotificationsModule } from '../notifications/notifications.module'; // Import NotificationsModule
+import { AppointmentsModule } from '../appointments/appointments.module'; // Import AppointmentsModule
 
 @Module({
   imports: [
@@ -12,7 +15,10 @@ import { AuthModule } from '../auth/auth.module'; // Import AuthModule for guard
     MulterModule.register({
       dest: './uploads', // Destination folder for uploaded files (relative to backend root)
     }),
-    AuthModule, // Import AuthModule for guards
+    UsersModule, // Import UsersModule to make UserRepository available
+    AuthModule, // Import AuthModule for guards,
+    NotificationsModule, // Import NotificationsModule to make NotificationsService available
+    AppointmentsModule, // Import AppointmentsModule to make AppointmentsService available
   ],
   controllers: [DocumentsController],
   providers: [DocumentsService],

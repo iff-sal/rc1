@@ -50,7 +50,7 @@ export class DocumentsController {
                appointmentId: {
                  type: 'string',
                  format: 'uuid',
-                 required: false,
+                 required: ['file', 'documentType'], // Specify required properties
                  description: 'Optional: UUID of the associated appointment',
               }
           },

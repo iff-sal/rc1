@@ -35,6 +35,6 @@ export class Service {
   @JoinColumn({ name: 'department_id' })
   department: Department;
 
-  // @OneToMany(() => Appointment, appointment => appointment.service)
-  // appointments: Appointment[]; // Uncomment when Appointment entity is created
+  @OneToMany(() => Appointment, appointment => appointment.service)
+  appointments: Appointment[];
 }

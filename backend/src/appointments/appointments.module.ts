@@ -6,6 +6,7 @@ import { Appointment } from './appointment.entity';
 import { ServicesModule } from '../services/services.module'; // Import ServicesModule
 import { DepartmentsModule } from '../departments/departments.module'; // Import DepartmentsModule
 import { AuthModule } from '../auth/auth.module'; // Import AuthModule for JwtAuthGuard
+import { NotificationsModule } from '../notifications/notifications.module'; // Import NotificationsModule
 import { User } from '../users/user.entity'; // Import User entity to inject UserRepository
 
 @Module({
@@ -14,6 +15,7 @@ import { User } from '../users/user.entity'; // Import User entity to inject Use
     ServicesModule,     // Import ServicesModule
     DepartmentsModule,  // Import DepartmentsModule
     AuthModule,         // Import AuthModule for guards
+    NotificationsModule, // Import NotificationsModule
   ],
   controllers: [AppointmentsController],
   providers: [AppointmentsService],

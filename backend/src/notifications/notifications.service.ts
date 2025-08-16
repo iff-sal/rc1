@@ -8,6 +8,7 @@ import { Document } from '../documents/document.entity'; // Assuming Document en
 import { format } from 'date-fns';
 import { User } from '../users/user.entity'; // Assuming User entity
 
+import { DocumentStatus, DocumentType } from '../common/enums';
 
 @Injectable()
 export class NotificationsService {

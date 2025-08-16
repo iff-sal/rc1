@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AppointmentStatus } from '../common/enums';
-import { LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Between } from 'typeorm';
 import { addHours, isFuture } from 'date-fns';
 
 @Injectable()

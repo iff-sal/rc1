@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { User } from '../users/user.entity'; // Assuming User entity exists
 import { Appointment } from '../appointments/appointment.entity'; // Assuming Appointment entity exists
+import { User } from '../users/user.entity';
 
 @Entity('feedback')
 export class Feedback {
@@ -21,6 +21,7 @@ export class Feedback {
 
   @CreateDateColumn()
   created_at: Date;
+
 
   @ManyToOne(() => User, user => user.feedback)
   @JoinColumn({ name: 'citizen_id' })
