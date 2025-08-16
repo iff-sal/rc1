@@ -7,6 +7,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useNavigate } from 'react-router-dom';
 import { AppointmentStatus, UserRole } from '../../../backend/src/common/enums'; // Assuming enums are accessible or redefine
+import { FaChartBar } from 'react-icons/fa'; // Import icon for analytics link
 
 // Redefine enums if not directly accessible from backend src
 enum FrontendAppointmentStatus {
@@ -44,7 +45,7 @@ const OfficerDashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date()); // Default to today
-  const [selectedStatus, setSelectedStatus] = useState<string>('pending,confirmed'); // Default to pending/confirmed
+  const [selectedStatus, setSelectedStatus] = useState<string>('pending,confirmed,rescheduled'); // Default to pending/confirmed/rescheduled
 
   const fetchAppointments = async (date?: Date | null, status?: string) => {
     if (!user || user.role !== UserRole.GovernmentOfficer) return;
@@ -59,6 +60,13 @@ const OfficerDashboardPage: React.FC = () => {
       }
       if (status) {
           params.status = status;
+      } else {
+           // Default status filter for today/future appointments if no status is selected
+           if (date) { // If a specific date is selected, show all statuses for that day
+                // No default status filter needed
+           } else { // If no date selected (showing future), default to upcoming statuses
+                params.status = 'pending,confirmed,rescheduled';
+           }
       }
 
 
@@ -117,6 +125,17 @@ const OfficerDashboardPage: React.FC = () => {
 
         {error && <div className="text-red-500 mb-4">{error}</div>}
 
+        {/* Analytics Link */}
+         <div className="mb-6">
+            <button
+               onClick={() => navigate('/officer/analytics')}
+                className="px-6 py-3 bg-primary text-white rounded-lg font-semibold text-lg hover:bg-orange-600 transition-colors duration-200 flex items-center"
+            >
+                 <FaChartBar className="mr-2" /> View Analytics
+            </button>
+         </div>
+
+
         {/* Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
@@ -139,7 +158,7 @@ const OfficerDashboardPage: React.FC = () => {
                    className="w-full px-3 py-2 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
                >
                    <option value="">All Statuses</option>
-                   <option value="pending,confirmed">Upcoming (Pending/Confirmed)</option>
+                   <option value="pending,confirmed,rescheduled">Upcoming (Pending/Confirmed/Rescheduled)</option> {/* Updated default */}
                    <option value="pending">Pending</option>
                    <option value="confirmed">Confirmed</option>
                    <option value="completed">Completed</option>

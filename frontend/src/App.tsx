@@ -10,7 +10,8 @@ import ServiceBookingPage from './pages/citizen/ServiceBookingPage';
 import AppointmentConfirmationPage from './pages/citizen/AppointmentConfirmationPage';
 import DocumentsPage from './pages/citizen/DocumentsPage';
 import AppointmentDetailPage from './pages/officer/AppointmentDetailPage';
-import AIAssistantPage from './pages/citizen/AIAssistantPage'; // Import AIAssistantPage
+import AIAssistantPage from './pages/citizen/AIAssistantPage';
+import AnalyticsPage from './pages/officer/AnalyticsPage'; // Import AnalyticsPage
 
 
 function AppRoutes() {
@@ -106,6 +107,14 @@ function AppRoutes() {
                  <AppointmentDetailPage />
               </ProtectedRoute>
             }
+         />
+         <Route // Analytics Page
+             path="/officer/analytics"
+             element={
+                 <ProtectedRoute requiredRoles={['government_officer', 'admin']}>
+                      <AnalyticsPage />
+                 </ProtectedRoute>
+             }
          />
          {/* TODO: Add routes for officer document review directly if needed */}
          {/* <Route
