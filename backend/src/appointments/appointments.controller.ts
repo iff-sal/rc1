@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, Req, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, Req, UseGuards, ParseUUIDPipe, BadRequestException } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { CreateAppointmentDto, AvailableSlotsQueryDto, AppointmentResponseDto, UpdateAppointmentStatusDto } from './dto/appointment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -30,7 +30,11 @@ export class AppointmentsController {
     @Req() req, // Contains user from JwtAuthGuard
     @Body() createAppointmentDto: CreateAppointmentDto,
   ): Promise<AppointmentResponseDto> {
-    const citizenId = req.user.id; // Assuming user ID is available on req.user
+    // Ensure the authenticated user is a citizen attempting to book for themselves
+     if (req.user.role !== UserRole.Citizen) {
+         throw new UnauthorizedException('Only citizens can book appointments via this endpoint.');
+     }
+    const citizenId = req.user.id; // Assuming user ID is available on req.user (set by JwtStrategy)
     const appointment = await this.appointmentsService.createAppointment(citizenId, createAppointmentDto);
     // Map entity to DTO if needed, for simplicity returning entity for now
     return appointment as any; // Type assertion for quick demo
@@ -40,22 +44,27 @@ export class AppointmentsController {
   @Roles(UserRole.Citizen)
   @ApiBearerAuth() // Assuming Swagger
   @Get('/citizens/me/appointments')
-  @ApiQuery({ name: 'status', enum: AppointmentStatus, required: false }) // Assuming Swagger
-  async getMyCitizenAppointments(@Req() req, @Query('status') status?: AppointmentStatus): Promise<AppointmentResponseDto[]> {
+   @ApiQuery({ name: 'status', description: 'Comma-separated list of statuses (e.g., pending,confirmed)', required: false, type: String }) // Assuming Swagger
+  async getMyCitizenAppointments(@Req() req, @Query('status') status?: string): Promise<AppointmentResponseDto[]> {
      const citizenId = req.user.id;
      const appointments = await this.appointmentsService.findAppointmentsByCitizenId(citizenId, status);
      return appointments as any; // Type assertion for quick demo
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.GovernmentOfficer, UserRole.Admin) // Officers and Admins can view department appointments
+  @Roles(UserRole.GovernmentOfficer, UserRole.Admin) // Officers and Admins view appointments for their department
   @ApiBearerAuth() // Assuming Swagger
    @Get('/officers/me/appointments')
    @ApiQuery({ name: 'date', description: 'ISO 8601 date string (optional)', required: false, example: '2023-10-27' }) // Assuming Swagger
-   @ApiQuery({ name: 'status', enum: AppointmentStatus, required: false }) // Assuming Swagger
-   async getMyOfficerAppointments(@Req() req, @Query('date') date?: string, @Query('status') status?: AppointmentStatus): Promise<AppointmentResponseDto[]> {
+   @ApiQuery({ name: 'status', description: 'Comma-separated list of statuses (optional, e.g., pending,confirmed)', required: false, type: String }) // Assuming Swagger
+   async getMyOfficerAppointments(
+        @Req() req, // Contains user from JwtAuthGuard
+        @Query('date') date?: string,
+        @Query('status') status?: string
+   ): Promise<AppointmentResponseDto[]> {
+        // The officerId and department check is handled within the service method for better encapsulation
         const officerId = req.user.id; // Assuming user ID is available on req.user
-        const appointments = await this.appointmentsService.findAppointmentsByOfficer(officerId, date, status);
+        const appointments = await this.appointmentsService.findAppointmentsByOfficerDepartment(officerId, date, status);
         return appointments as any; // Type assertion for quick demo
    }
 
@@ -67,7 +76,12 @@ export class AppointmentsController {
   async updateAppointmentStatus(
     @Param('id', ParseUUIDPipe) appointmentId: string,
     @Body() updateStatusDto: UpdateAppointmentStatusDto,
+    @Req() req // To access officer's department for potential auth check
   ): Promise<AppointmentResponseDto> {
+    // TODO: Add authorization check here or in service to ensure the officer performing the update
+    // belongs to the same department as the appointment's service department.
+    // This would involve fetching the appointment by ID and comparing its department_id
+    // with the req.user.department_id.
     const updatedAppointment = await this.appointmentsService.updateAppointmentStatus(appointmentId, updateStatusDto);
     return updatedAppointment as any; // Type assertion for quick demo
   }

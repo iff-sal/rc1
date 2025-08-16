@@ -5,13 +5,14 @@ import SignupPage from './pages/auth/SignupPage';
 import LoginPage from './pages/auth/LoginPage';
 import HomePage from './pages/citizen/HomePage';
 import OfficerDashboardPage from './pages/officer/OfficerDashboardPage';
-import ServicesPage from './pages/citizen/ServicesPage'; // Import ServicesPage
-import ServiceBookingPage from './pages/citizen/ServiceBookingPage'; // Import ServiceBookingPage
-import AppointmentConfirmationPage from './pages/citizen/AppointmentConfirmationPage'; // Import AppointmentConfirmationPage
+import ServicesPage from './pages/citizen/ServicesPage';
+import ServiceBookingPage from './pages/citizen/ServiceBookingPage';
+import AppointmentConfirmationPage from './pages/citizen/AppointmentConfirmationPage';
+import DocumentsPage from './pages/citizen/DocumentsPage'; // Import DocumentsPage
 
 
 function AppRoutes() {
-  const { user, token, loading } = useAuth(); // Use loading state from AuthContext
+  const { user, token, loading } = useAuth();
 
    // Show a loading indicator while authentication status is being determined
   if (loading) {
@@ -38,7 +39,7 @@ function AppRoutes() {
        <Route
         path="/officer/dashboard"
         element={
-          <ProtectedRoute requiredRoles={['government_officer', 'admin']}> {/* Assuming admin can also access officer dashboard */}
+          <ProtectedRoute requiredRoles={['government_officer', 'admin']}>
             <OfficerDashboardPage />
           </ProtectedRoute>
         }
@@ -62,16 +63,31 @@ function AppRoutes() {
       <Route // Appointment Confirmation Page
         path="/appointments/confirm"
         element={
-          <ProtectedRoute requiredRoles={['citizen']}> {/* Only citizen confirms their appointment */}
+          <ProtectedRoute requiredRoles={['citizen']}>
             <AppointmentConfirmationPage />
           </ProtectedRoute>
         }
       />
+      <Route // Documents Page
+        path="/documents"
+        element={
+          <ProtectedRoute requiredRoles={['citizen']}>
+            <DocumentsPage />
+          </ProtectedRoute>
+        }
+      />
+       {/* TODO: Add route for viewing individual appointment details */}
+       {/* <Route
+            path="/appointments/:id"
+            element={
+              <ProtectedRoute requiredRoles={['citizen', 'government_officer', 'admin']}>
+                 <AppointmentDetailsPage /> // Create this page later
+              </ProtectedRoute>
+            }
+         /> */}
 
 
       {/* Default redirect */}
-      {/* Redirect based on auth state. If loading is false and user is null, redirect to login.
-          If loading is false and user exists, redirect based on role. */}
       <Route path="/" element={<Navigate to={defaultRedirect} replace />} />
 
       {/* Fallback for unknown routes */}

@@ -48,16 +48,22 @@ const HomePage: React.FC = () => {
   }, [user]); // Rerun when user changes (e.g., after login)
 
 
-  // Example Quick Actions - Link to Service Booking Page (replace with actual Service IDs)
+  // Example Quick Actions - Link to Service Booking Page (replace with actual Service IDs from db_dump.sql)
   const quickActions = [
-    { name: 'Driving License Renewal', serviceId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' }, // Replace with real UUIDs
-    { name: 'New Passport Application', serviceId: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' }, // Replace with real UUIDs
-    // Add more quick actions as needed
+    { name: 'Driving License Renewal', serviceId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' }, // Department of Motor Traffic -> Driving License Renewal
+    { name: 'New Passport Application', serviceId: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' }, // Department of Immigration & Emigration -> New Passport Application
+     { name: 'View All Services', path: '/services' }, // Link to the Services browse page
+     { name: 'View My Appointments', path: '/citizens/me/appointments' }, // Link to view all citizen appointments (create this page later)
+     { name: 'View My Documents', path: '/documents' }, // Link to the new Documents page
   ];
 
-  // Function to navigate to service booking page
-  const handleQuickActionClick = (serviceId: string) => {
-      navigate(`/services/${serviceId}`);
+  // Function to handle quick action clicks
+  const handleQuickActionClick = (action: { serviceId?: string, path?: string }) => {
+      if (action.serviceId) {
+         navigate(`/services/${action.serviceId}`);
+      } else if (action.path) {
+         navigate(action.path);
+      }
   };
 
 
@@ -124,8 +130,8 @@ const HomePage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
              {quickActions.map(action => (
                  <button
-                    key={action.serviceId}
-                    onClick={() => handleQuickActionClick(action.serviceId)}
+                    key={action.path || action.serviceId} // Use path or serviceId as key
+                    onClick={() => handleQuickActionClick(action)}
                     className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow duration-200 text-blue-600 font-medium text-sm text-left"
                  >
                      {action.name}

@@ -1,5 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { UserRole } from '../common/enums';
+import { Appointment } from '../appointments/appointment.entity'; // Assuming Appointment entity exists
+import { Document } from '../documents/document.entity'; // Assuming Document entity exists
+import { Feedback } from '../feedback/feedback.entity'; // Assuming Feedback entity exists
+import { Department } from '../departments/department.entity'; // Import Department entity
 
 @Entity('users')
 export class User {
@@ -33,9 +37,26 @@ export class User {
   @Column({ default: true })
   receives_email_notifications: boolean;
 
+   @Column({ type: 'uuid', nullable: true }) // Foreign key for department
+  department_id: string | null; // Nullable as not all users (citizens) have a department
+
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @OneToMany(() => Appointment, appointment => appointment.citizen)
+  appointments: Appointment[]; // Appointments booked by this citizen
+
+  @OneToMany(() => Document, document => document.user)
+  documents: Document[]; // Documents uploaded by this user
+
+  @OneToMany(() => Feedback, feedback => feedback.user)
+  feedback: Feedback[]; // Feedback submitted by this user
+
+  @ManyToOne(() => Department)
+  @JoinColumn({ name: 'department_id' })
+  department: Department; // Department the user belongs to (for officers/admins)
+
 }

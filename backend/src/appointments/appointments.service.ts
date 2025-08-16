@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Between, Repository, MoreThanOrEqual, LessThanOrEqual, IsNull } from 'typeorm'; // Import IsNull
 import { Appointment } from './appointment.entity';
 import { CreateAppointmentDto, AvailableSlotsQueryDto, UpdateAppointmentStatusDto } from './dto/appointment.dto';
 import { ServicesService } from '../services/services.service';
@@ -8,7 +8,8 @@ import { DepartmentsService } from '../departments/departments.service';
 import { UserRole, AppointmentStatus } from '../common/enums';
 import { v4 as uuidv4 } from 'uuid';
 import * as QRCode from 'qrcode';
-import { User } from '../users/user.entity';
+import { User } from '../users/user.entity'; // Import User entity
+import { In } from 'typeorm';
 
 @Injectable()
 export class AppointmentsService {
@@ -39,6 +40,13 @@ export class AppointmentsService {
     const endHour = 17; // 5 PM
     const slotDurationMinutes = service.duration_minutes || 30; // Use service duration or default
 
+    // Check if the requested date is in the past
+    const today = new Date();
+    today.setHours(0,0,0,0); // Compare just the date
+    if (date < today) {
+        return []; // Cannot book appointments in the past
+    }
+
     // Check if the requested date is a weekend (Saturday or Sunday) - simplified check
     const dayOfWeek = date.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -55,10 +63,11 @@ export class AppointmentsService {
 
     while (currentTime < officeEndTime) {
       const slotEndTime = new Date(currentTime.getTime() + slotDurationMinutes * 60000);
+       // Ensure the entire slot is within working hours
       if (slotEndTime <= officeEndTime) {
          availableSlots.push(currentTime.toTimeString().substring(0, 5)); // Format as HH:MM
       }
-      currentTime = slotEndTime; // Move to the next slot start time
+      currentTime = new Date(currentTime.getTime() + slotDurationMinutes * 60000); // Increment by slot duration
     }
 
 
@@ -67,10 +76,15 @@ export class AppointmentsService {
       where: {
         service_id: serviceId,
         appointment_date_time: Between(date, endOfDay),
-        status: AppointmentStatus.Confirmed // Only consider confirmed bookings as unavailable
+        // Consider statuses that block a slot
+        status: In([AppointmentStatus.Pending, AppointmentStatus.Confirmed]) // Import In from typeorm
       },
       select: ['appointment_date_time']
     });
+
+     // For TypeORM < 0.3.x, use the following import:
+    // import { Between, In, Repository, MoreThanOrEqual, LessThanOrEqual, IsNull } from 'typeorm';
+
 
     const bookedSlots: string[] = bookedAppointments.map(app =>
       app.appointment_date_time.toTimeString().substring(0, 5) // Format as HH:MM
@@ -100,6 +114,12 @@ export class AppointmentsService {
         throw new BadRequestException(`The requested slot ${requestedSlot} on ${appointmentDate.toDateString()} is not available.`);
     }
 
+    // Check if the appointment date/time is in the past (double check)
+    if (new Date(appointmentDateTime) < new Date()) {
+        throw new BadRequestException('Cannot book appointments in the past.');
+    }
+
+
     // Generate unique confirmation reference and QR code
     const confirmationReference = uuidv4().substring(0, 8).toUpperCase(); // Simple unique ref
     const qrCodeBase64 = await QRCode.toDataURL(confirmationReference);
@@ -121,11 +141,21 @@ export class AppointmentsService {
     return newAppointment;
   }
 
-  async findAppointmentsByCitizenId(citizenId: string, status?: AppointmentStatus): Promise<Appointment[]> {
+  async findAppointmentsByCitizenId(citizenId: string, status?: string): Promise<Appointment[]> {
     const where: any = { citizen_id: citizenId };
+
+     // Handle comma-separated statuses if provided
     if (status) {
-      where.status = status;
+       const statuses = status.split(',') as AppointmentStatus[];
+       // Validate that all provided statuses are valid enum values
+       const validStatuses = Object.values(AppointmentStatus) as string[];
+       if (!statuses.every(s => validStatuses.includes(s))) {
+           throw new BadRequestException('Invalid appointment status provided.');
+       }
+       where.status = In(statuses); // Use In for multiple statuses
     }
+
+
     return this.appointmentsRepository.find({
         where,
         relations: ['service', 'department'], // Eager load relations for response
@@ -133,17 +163,20 @@ export class AppointmentsService {
     });
   }
 
-  async findAppointmentsByOfficer(officerId: string, dateString?: string, status?: AppointmentStatus): Promise<Appointment[]> {
-    // Find the department the officer belongs to
-    // This assumes the user entity has a department_id or there's a linking table
-    // For now, let's assume officer user has a department_id column directly
-    const officer = await this.userRepository.findOne({ where: { id: officerId }, select: ['id', 'department_id', 'role'] as (keyof User)[] });
 
-    if (!officer || officer.role !== UserRole.GovernmentOfficer || !officer.department_id) {
+  async findAppointmentsByOfficerDepartment(officerId: string, dateString?: string, status?: string): Promise<Appointment[]> {
+    // Find the department the officer belongs to
+    const officer = await this.userRepository.findOne({
+         where: { id: officerId },
+         relations: ['department'], // Eager load the department relationship
+         select: ['id', 'role', 'department'] as (keyof User)[] // Select department relationship
+    });
+
+    if (!officer || officer.role !== UserRole.GovernmentOfficer || !officer.department) {
         throw new UnauthorizedException('User is not a valid government officer or not assigned to a department.');
     }
 
-    const where: any = { department_id: officer.department_id };
+    const where: any = { department_id: officer.department.id };
 
      if (dateString) {
         const date = new Date(dateString);
@@ -153,8 +186,15 @@ export class AppointmentsService {
         where.appointment_date_time = Between(date, endOfDay);
     }
 
+     // Handle comma-separated statuses if provided
     if (status) {
-        where.status = status;
+       const statuses = status.split(',') as AppointmentStatus[];
+        // Validate that all provided statuses are valid enum values
+       const validStatuses = Object.values(AppointmentStatus) as string[];
+        if (!statuses.every(s => validStatuses.includes(s))) {
+            throw new BadRequestException('Invalid appointment status provided.');
+        }
+       where.status = In(statuses); // Use In for multiple statuses
     }
 
 
@@ -173,10 +213,17 @@ export class AppointmentsService {
       throw new NotFoundException(`Appointment with ID ${appointmentId} not found`);
     }
 
+    // Optional: Add check here to ensure the officer performing the update
+    // belongs to the same department as the appointment's service.
+    // This requires getting the officer's department from req.user in the controller
+    // and passing it here, or fetching it based on the appointment's department_id.
+
+
     appointment.status = updateDto.status;
     if (updateDto.officerNotes !== undefined) {
         appointment.officer_notes = updateDto.officerNotes;
     }
+    appointment.updated_at = new Date(); // Update the updated_at timestamp
 
 
     await this.appointmentsRepository.save(appointment);
