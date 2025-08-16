@@ -3,10 +3,13 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+# COPY --from=builder /app/package*.json ./
+COPY package.json package-lock.json ./
+
 RUN npm ci
 
-COPY . . # Copies all source files, tsconfig.json, etc. to builder stage
+# Copies all source files, tsconfig.json, etc. to builder stage
+COPY . . 
 
 RUN npm run build # Builds the dist/ directory
 
@@ -15,8 +18,10 @@ FROM node:18-alpine AS production
 
 WORKDIR /app
 
-COPY package*.json ./ # Copy package files again for production dependencies
-RUN npm ci --only=production # Install only production dependencies
+# Copy package files again for production dependencies
+COPY package*.json ./ 
+# Install only production dependencies
+RUN npm ci --only=production
 
 # Copy necessary build outputs and config for running the app
 COPY --from=builder /app/dist ./dist
