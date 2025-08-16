@@ -13,29 +13,32 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { AiChatModule } from './ai-chat/ai-chat.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { User } from './users/user.entity'; // Import User entity
+import { User } from './users/user.entity';
+import { Department } from './departments/department.entity'; // Import Department entity
+import { Service } from './services/service.entity';     // Import Service entity
+
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Makes ConfigModule available globally
-      load: [], // You can add configuration loading functions here if needed
+      isGlobal: true,
+      load: [],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User], // Include User entity here
-        synchronize: false, // Set to true for development, false for production (be cautious with true in production)
+        entities: [User, Department, Service], // Include Department and Service entities
+        synchronize: false,
         autoLoadEntities: true,
       }),
       inject: [ConfigService],
     }),
     AuthModule,
     UsersModule,
-    DepartmentsModule,
-    ServicesModule,
+    DepartmentsModule, // Import DepartmentsModule
+    ServicesModule,    // Import ServicesModule
     AppointmentsModule,
     DocumentsModule,
     NotificationsModule,
