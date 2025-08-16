@@ -14,14 +14,18 @@ export enum AppointmentStatus {
 }
 
 export enum DocumentType {
-  NIC = 'nic',
+  NationalIdentityCard = 'national_identity_card',
   Passport = 'passport',
   DrivingLicense = 'driving_license',
+  BirthCertificate = 'birth_certificate',
+  ApplicationForm = 'application_form',
+  Photograph = 'photograph',
   Other = 'other',
 }
 
 export enum DocumentStatus {
-  PendingReview = 'pending_review',
+  Uploaded = 'uploaded',
+  UnderReview = 'under_review',
   Approved = 'approved',
   Rejected = 'rejected',
 }
